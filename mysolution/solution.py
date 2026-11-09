@@ -994,7 +994,7 @@ class KnowledgeAssistant:
             },
             config={
                 "run_name": "Answer member question",
-                "tags": ["aisolution", "rag"],
+                "tags": ["mysolution", "rag"],
                 "metadata": {"snapshot_id": snapshot_id, "as_of": as_of or snapshot_date},
             },
         )

@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 """
-Evaluate aisolution on the 40 public questions with Ragas and write a CSV.
+Evaluate mysolution on the 40 public questions with Ragas and write a CSV.
 
 Steps:
-    1. Build aisolution and ingest all snapshots in date order (skipped when already indexed)
+    1. Build mysolution and ingest all snapshots in date order (skipped when already indexed)
     2. Call answer() for each question while capturing the retrieved context
     3. Score each answer with the harness scorer (harness/scoring.py)
     4. Compute 7 Ragas metrics and write results/ragas-<MMDDYYYY>-<n>.csv
 
 Usage (from the project root):
-    python aisolution/ragas.py                                   # harness scores only, no Ragas calls
-    python aisolution/ragas.py --metrics context_recall,faithfulness
-    python aisolution/ragas.py --metrics all --model gpt-4.1-mini --concurrency 4
+    python mysolution/ragas.py                                   # harness scores only, no Ragas calls
+    python mysolution/ragas.py --metrics context_recall,faithfulness
+    python mysolution/ragas.py --metrics all --model gpt-4.1-mini --concurrency 4
 
 Ragas metrics are off by default because they are expensive (about 49 LLM calls per question
 with all 7 on and 12 retrieved chunks). Turn them on with --metrics (comma-separated names,
 "all" or "none") or the RAGAS_METRICS environment variable. Disabled metrics leave empty cells.
 
-Dependencies (local evaluation only; not submission dependencies, do not add to aisolution/requirements.txt):
+Dependencies (local evaluation only; not submission dependencies, do not add to mysolution/requirements.txt):
     pip install ragas "langchain-community==0.4.1"
 """
 from __future__ import annotations
@@ -31,7 +31,6 @@ ROOT = HERE.parent
 # This file shares its name with the ragas package; remove this folder from sys.path first, or `import ragas` imports this file itself
 sys.path[:] = [p for p in sys.path if Path(p or ".").resolve() != HERE]
 sys.path.insert(0, str(ROOT / "harness"))
-sys.path.insert(0, str(ROOT / "tools"))
 
 import argparse  # noqa: E402
 import asyncio  # noqa: E402
@@ -44,7 +43,11 @@ from datetime import date  # noqa: E402
 
 from dotenv import load_dotenv  # noqa: E402
 
-from make_eval_report import explain, join_list  # noqa: E402
+# make_eval_report.py lives in this folder, which was removed from sys.path above, so load it by file path
+_spec = importlib.util.spec_from_file_location("make_eval_report", HERE / "make_eval_report.py")
+_make_eval_report = importlib.util.module_from_spec(_spec)
+_spec.loader.exec_module(_make_eval_report)
+explain, join_list = _make_eval_report.explain, _make_eval_report.join_list
 from run_eval import load_snapshots, to_answer  # noqa: E402
 from scoring import score_item  # noqa: E402
 
@@ -253,10 +256,9 @@ def build_metrics(enabled: list[str], model: str) -> dict:
     return metrics
 
 
-async def evaluate_all(records: list[dict], enabled: list[str], model: str, concurrency: int) -> list[dict]:
-    if not enabled:
+async def evaluate_all(records: list[dict], metrics: dict, concurrency: int) -> list[dict]:
+    if not metrics:
         return [{name: "" for name in METRIC_COLUMNS} for _ in records]
-    metrics = build_metrics(enabled, model)
     semaphore = asyncio.Semaphore(concurrency)
     return await asyncio.gather(*(evaluate_record(r, metrics, semaphore) for r in records))
 
@@ -317,7 +319,7 @@ def print_summary(records: list[dict], metric_rows: list[dict], enabled: list[st
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Evaluate aisolution with Ragas")
+    ap = argparse.ArgumentParser(description="Evaluate mysolution with Ragas")
     ap.add_argument("--eval", type=Path, default=ROOT / "eval" / "public_eval.jsonl")
     ap.add_argument("--snapshots", type=Path, default=ROOT / "snapshots")
     ap.add_argument("--results", type=Path, default=ROOT / "results")
@@ -331,6 +333,17 @@ def main() -> None:
     )
     args = ap.parse_args()
     enabled = parse_metrics(args.metrics)
+    # Build the Ragas metrics before ingesting and answering, so a broken Ragas install or a missing
+    # OPENAI_API_KEY fails in seconds instead of after every question has been answered
+    if enabled and not os.getenv("OPENAI_API_KEY"):
+        raise SystemExit("OPENAI_API_KEY is not set; Ragas needs it to grade. Add it to .env or the environment.")
+    try:
+        metrics = build_metrics(enabled, args.model) if enabled else {}
+    except ImportError as exc:
+        raise SystemExit(
+            f"Could not import Ragas ({exc}).\n"
+            'Install the evaluation dependencies: pip install ragas "langchain-community==0.4.1"'
+        ) from exc
 
     items = [json.loads(line) for line in args.eval.read_text(encoding="utf-8").splitlines() if line.strip()]
 
@@ -348,7 +361,7 @@ def main() -> None:
               f"(about {estimate_calls(records, enabled)} LLM calls with {args.model})", flush=True)
     else:
         print("Ragas metrics off: no Ragas LLM calls", flush=True)
-    metric_rows = asyncio.run(evaluate_all(records, enabled, args.model, args.concurrency))
+    metric_rows = asyncio.run(evaluate_all(records, metrics, args.concurrency))
 
     out = next_report_path(args.results)
     write_csv(records, metric_rows, out)

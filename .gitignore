@@ -6,3 +6,4 @@ __pycache__/
 snapshots/0*/
 .chroma/
 .venv/
+chroma_export/

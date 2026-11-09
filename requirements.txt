@@ -9,6 +9,8 @@ pydantic>=2.7,<3.0
 python-dotenv>=1.0,<2.0
 flashrank>=0.2.10,<1.0
 ragas>=0.4,<0.5
+# ragas 0.4.x imports langchain_community.chat_models.vertexai, which 0.4.2 removed
+langchain-community==0.4.1
 
 # Optional: LLM-judge scoring in harness/scoring.py (only used when ANTHROPIC_API_KEY is set)
 # anthropic

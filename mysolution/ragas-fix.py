@@ -3,9 +3,9 @@
 Add "max score" and "fix suggestion" columns to a Ragas CSV report.
 
 Usage (from the project root):
-    python aisolution/ragas-fix.py results/ragas-11072026-1.csv            # harness-based tips only
-    python aisolution/ragas-fix.py results/ragas-11072026-1.csv --metrics all
-    python aisolution/ragas-fix.py results/ragas-11072026-1.csv --metrics context_recall,faithfulness
+    python mysolution/ragas-fix.py results/ragas-11072026-1.csv            # harness-based tips only
+    python mysolution/ragas-fix.py results/ragas-11072026-1.csv --metrics all
+    python mysolution/ragas-fix.py results/ragas-11072026-1.csv --metrics context_recall,faithfulness
 
 Ragas metric hints are off by default. Turn them on with --metrics (comma-separated names,
 "all" or "none") or the RAGAS_METRICS environment variable. A metric that is on but has an
@@ -159,7 +159,7 @@ def suggestion(row: dict[str, str], max_score: float, total_weight: float) -> st
         if entity_recall is not None:
             detail += f", context_entity_recall={entity_recall:g}"
         tips.append(
-            f"RETRIEVAL ({detail}): expected facts are absent from the retrieved context. Use tools/debug.py to "
+            f"RETRIEVAL ({detail}): expected facts are absent from the retrieved context. Use mysolution/debug.py to "
             "check whether they rank below the retrieval limit, were removed during duplicate merging, or do not "
             "exist in the selected snapshot."
         )

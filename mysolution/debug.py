@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 """
-Trace how aisolution/solution.py handles one question from the eval set.
+Trace how mysolution/solution.py handles one question from the eval set.
 
 Usage (from the project root):
-    python tools/debug.py 7            # the 7th question in eval/public_eval.jsonl (1-based)
-    python tools/debug.py dup-073      # the question with id "dup-073"
-    python tools/debug.py dup-049 --repeat 3 --deep-k 80
+    python mysolution/debug.py 7            # the 7th question in eval/public_eval.jsonl (1-based)
+    python mysolution/debug.py dup-073      # the question with id "dup-073"
+    python mysolution/debug.py dup-049 --repeat 3 --deep-k 80
 
 The trace is printed to the console and written to results/trace-<id>-MMDDYYYY-n.md.
 solution.py is not modified; retrieval and the model call are captured through a subclass.
@@ -17,7 +17,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "harness"))
-sys.path.insert(0, str(ROOT / "tools"))
+sys.path.insert(0, str(ROOT / "mysolution"))
 
 import argparse  # noqa: E402
 import importlib.util  # noqa: E402
@@ -99,7 +99,7 @@ def show(value) -> str:
 # ---------------------------------------------------------------------------
 
 def load_solution_module():
-    spec = importlib.util.spec_from_file_location("solution", ROOT / "aisolution" / "solution.py")
+    spec = importlib.util.spec_from_file_location("solution", ROOT / "mysolution" / "solution.py")
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
@@ -261,7 +261,7 @@ def table_cell(text: str) -> str:
 
 
 def check_index_state(solution, snapshots) -> list[str]:
-    state_path = ROOT / "aisolution" / ".chroma" / "index_state.json"
+    state_path = ROOT / "mysolution" / ".chroma" / "index_state.json"
     signature = f"{solution.INDEX_VERSION}:{os.getenv('OPENAI_EMBEDDING_MODEL', 'text-embedding-3-small')}"
     state = json.loads(state_path.read_text(encoding="utf-8")) if state_path.exists() else {}
     indexed = state.get("indexed", {}) if state.get("signature") == signature else {}
@@ -311,7 +311,7 @@ def resolve_item(items: list[dict], key: str) -> tuple[int, dict] | None:
 
 
 def main() -> None:
-    ap = argparse.ArgumentParser(description="Trace how aisolution answers one eval question")
+    ap = argparse.ArgumentParser(description="Trace how mysolution answers one eval question")
     ap.add_argument("question", help="question number (1-based) or id such as dup-073")
     ap.add_argument("--eval", type=Path, default=ROOT / "eval" / "public_eval.jsonl")
     ap.add_argument("--snapshots", type=Path, default=ROOT / "snapshots")

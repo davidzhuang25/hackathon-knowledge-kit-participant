@@ -7,8 +7,8 @@ From the package root:
 
 ```bash
 source .venv/bin/activate
-pip install -r aisolution/requirements.txt
-python harness/run_eval.py --submission aisolution --eval eval/public_eval.jsonl
+pip install -r mysolution/requirements.txt
+python harness/run_eval.py --submission mysolution --eval eval/public_eval.jsonl
 ```
 
 The solution loads `OPENAI_API_KEY` and optional LangSmith settings from the package-root `.env`
@@ -23,5 +23,5 @@ retrieved page excerpts. For
 short-lived scorer runs, set `LANGCHAIN_CALLBACKS_BACKGROUND=false` so trace callbacks finish
 before the process exits. Disable tracing during final timing measurements if its overhead matters.
 
-Chroma data is stored in `aisolution/.chroma/` and ignored by Git. It can be deleted to rebuild
+Chroma data is stored in `mysolution/.chroma/` and ignored by Git. It can be deleted to rebuild
 the local index; the scorer's source snapshots remain unchanged.
