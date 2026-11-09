@@ -5,3 +5,4 @@ __pycache__/
 .env
 snapshots/0*/
 .chroma/
+.venv/
