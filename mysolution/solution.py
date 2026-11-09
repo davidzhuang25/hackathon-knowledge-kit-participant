@@ -1,14 +1,13 @@
 """LangChain RAG submission for the knowledge-kit harness."""
 """ 
-python3 harness/run_eval.py --submission aisolution --eval eval/public_eval.jsonl 
+python3 harness/run_eval.py --submission mysolution --eval eval/public_eval.jsonl 
 """
-from pydantic import BaseModel, Field
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
+from pydantic import BaseModel, Field
 from langchain_core.runnables import RunnableLambda, RunnablePassthrough
 from langchain_core.prompts import ChatPromptTemplate
 from langchain_core.documents import Document
 from langchain_chroma import Chroma
-
 import hashlib
 import importlib
 import json
@@ -21,9 +20,9 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import NamedTuple, Optional
 from urllib.parse import urlparse
-
-from flashrank import Ranker, RerankRequest
 from dotenv import load_dotenv
+from flashrank import Ranker, RerankRequest
+
 
 load_dotenv(Path(__file__).resolve().parents[1] / ".env", override=False)
 
@@ -66,7 +65,8 @@ MAX_CHUNKS_PER_URL = 2
 # Distinct URLs returned in Answer.sources; the scorer gives source credit if any one matches, with no penalty for extras
 MAX_SOURCES = 12
 OFFICIAL_NEIGHBORS = 2
-_OFFICIAL_PATH_PREFIXES = ("/about", "/personal", "/business", "/contact", "/rates")
+_OFFICIAL_PATH_PREFIXES = ("/about", "/personal",
+                           "/business", "/contact", "/rates")
 _VALUE_RE = re.compile(
     r"(?<![\w])(?:\$\s*\d[\d,]*(?:\.\d+)?|"
     r"\d[\d,]*(?:\.\d+)?\s*(?:%|APR\b|APY\b)|"
@@ -181,7 +181,8 @@ def _is_official_url(url: str) -> bool:
     if not path:
         return False
     return any(
-        path == prefix or path.startswith(prefix + "/") or path.startswith(prefix + "-")
+        path == prefix or path.startswith(
+            prefix + "/") or path.startswith(prefix + "-")
         for prefix in _OFFICIAL_PATH_PREFIXES
     )
 
@@ -211,7 +212,8 @@ def _has_rate_percent(text: str, question: str) -> bool:
     for match in _PERCENT_RE.finditer(text or ""):
         if _numbers_in(match.group(0)) <= question_numbers:
             continue
-        window = (text or "")[max(0, match.start() - _CAP_WINDOW_CHARS):match.start()]
+        window = (text or "")[
+            max(0, match.start() - _CAP_WINDOW_CHARS):match.start()]
         if not _CAP_CONTEXT_RE.search(window):
             return True
     return False
@@ -235,7 +237,8 @@ def _finalize_answer_text(question: str, text: str, confident: bool) -> tuple[st
     rate_question = bool(_RATE_QUESTION_RE.search(question or ""))
     missing = bool(_MISSING_VALUE_RE.search(text))
     # A confident draft that gives rate values keeps them even if it says some other item is not listed
-    missing_only = missing and not (confident and _has_rate_percent(text, question))
+    missing_only = missing and not (
+        confident and _has_rate_percent(text, question))
     if rate_question and (not confident or missing_only or _looks_like_structure_only(text)):
         return _RATE_REFUSAL, False
     if not confident:
@@ -395,7 +398,8 @@ class MarkdownChunker:
 
             for chunk_index, chunk in enumerate(chunks):
                 # Add the table categories in this chunk to its section path
-                categories = list(dict.fromkeys(_CATEGORY_TAG_RE.findall(chunk)))
+                categories = list(dict.fromkeys(
+                    _CATEGORY_TAG_RE.findall(chunk)))
                 chunk_section = (
                     f"{section} > {' / '.join(categories)}" if categories else section
                 )
@@ -758,13 +762,15 @@ class KnowledgeAssistant:
             published = document.metadata.get("published_on") or ""
             if not published:
                 continue
-            title = re.sub(r"\s+", " ", (document.metadata.get("title") or "").lower()).strip()
+            title = re.sub(
+                r"\s+", " ", (document.metadata.get("title") or "").lower()).strip()
             if title and published > latest.get(title, ""):
                 latest[title] = published
         kept = []
         for document, distance in scored:
             published = document.metadata.get("published_on") or ""
-            title = re.sub(r"\s+", " ", (document.metadata.get("title") or "").lower()).strip()
+            title = re.sub(
+                r"\s+", " ", (document.metadata.get("title") or "").lower()).strip()
             if published and title and published < latest.get(title, ""):
                 continue
             kept.append((document, distance))
@@ -802,7 +808,8 @@ class KnowledgeAssistant:
         ):
             if content is None:
                 continue
-            documents.append(Document(page_content=content, metadata=metadata or {}))
+            documents.append(
+                Document(page_content=content, metadata=metadata or {}))
         return documents
 
     def _previous_official_neighbors(
@@ -832,7 +839,8 @@ class KnowledgeAssistant:
             return []
         best_key = _chunk_key(best_document)
         position = next(
-            (index for index, document in enumerate(page_docs) if _chunk_key(document) == best_key),
+            (index for index, document in enumerate(
+                page_docs) if _chunk_key(document) == best_key),
             None,
         )
         if position is None:
@@ -1017,7 +1025,8 @@ class KnowledgeAssistant:
                 Source(
                     url=url,
                     snapshot_id=metadata.get("snapshot_id"),
-                    quote=_strip_category_tags(document.page_content)[:350].strip(),
+                    quote=_strip_category_tags(document.page_content)[
+                        :350].strip(),
                 )
             )
             if len(sources) >= MAX_SOURCES:
