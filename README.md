@@ -7,7 +7,7 @@ python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
 cp .env.example .env   # then add your OPENAI KEY
-
+# The supplied website snapshots are removed, so please make sure you put it back
 python3 harness/run_eval.py --submission mysolution --eval eval/public_eval.jsonl 
 
 ```
