@@ -13,3 +13,4 @@ mysolution/ragas.py
 mysolution/ragas-fix.py
 mysolution/make_eval_report.py
 mysolution/make_fix_report.py
+mysolution/export_chroma_chunks.py
