@@ -8,3 +8,6 @@ snapshots/0*/
 .venv/
 chroma_export/
 snapshots_zip/
+mysolution/debug.py
+mysolution/ragas.py
+mysolution/ragas-fix.py
